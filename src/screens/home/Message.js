@@ -1,24 +1,21 @@
-import React from 'react'
-import { StyleSheet, Text, View, FlatList } from 'react-native'
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import React from 'react';
+import {StyleSheet, Text, View, FlatList} from 'react-native';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
 
 const Message = () => {
-
   const keyExtractor = (_, index) => index?.toString();
 
-  const renderItem = ({ item, index }) => {
-    let condition = index % 2 === 0
+  const renderItem = ({item, index}) => {
+    let condition = index % 2 === 0;
     return (
-      <View style={[
-        styles.card,
-        condition
-          ? styles.cardUser
-          : styles.cardAi
-      ]}>
-        <Text>{"itemitemitemitemitemitemitemitemitemitemitemitemitemitemitemitemitemitemitem"}</Text>
+      <View style={[styles.card, condition ? styles.cardUser : styles.cardAi]}>
+        <Text>{''}</Text>
       </View>
-    )
-  }
+    );
+  };
 
   return (
     <View style={styles.container}>
@@ -34,8 +31,8 @@ const Message = () => {
         />
       </View>
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -53,7 +50,7 @@ const styles = StyleSheet.create({
     padding: wp(3),
   },
   ccStyle: {
-    paddingBottom: hp(5)
+    paddingBottom: hp(5),
   },
   card: {
     marginBottom: hp(2),
@@ -75,6 +72,6 @@ const styles = StyleSheet.create({
     borderTopRightRadius: wp(2),
     borderBottomRightRadius: wp(2),
   },
-})
+});
 
 export default Message;

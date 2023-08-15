@@ -1,1 +1,1 @@
-export { default } from './IntroScreen';
+export {default} from './IntroScreen';

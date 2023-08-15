@@ -1,10 +1,13 @@
-import React from 'react'
-import { StyleSheet, View } from 'react-native'
-import { widthPercentageToDP as wp, heightPercentageToDP as hp } from 'react-native-responsive-screen';
+import React from 'react';
+import {StyleSheet, View} from 'react-native';
+import {
+  widthPercentageToDP as wp,
+  heightPercentageToDP as hp,
+} from 'react-native-responsive-screen';
 import FastImage from 'react-native-fast-image';
 
-import Message from './Message'
-import ActionMessage from './ActionMessage'
+import Message from './Message';
+import ActionMessage from './ActionMessage';
 
 const HomeScreen = () => {
   return (
@@ -19,8 +22,8 @@ const HomeScreen = () => {
       <Message />
       <ActionMessage />
     </View>
-  )
-}
+  );
+};
 
 const styles = StyleSheet.create({
   container: {
@@ -31,7 +34,7 @@ const styles = StyleSheet.create({
   },
   vwImg: {
     marginTop: hp(2),
-    marginBottom: hp(2),
+    marginBottom: hp(4),
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -39,6 +42,6 @@ const styles = StyleSheet.create({
     width: wp(25),
     height: wp(25),
   },
-})
+});
 
-export default HomeScreen
+export default HomeScreen;
