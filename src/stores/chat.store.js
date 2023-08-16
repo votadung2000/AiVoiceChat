@@ -4,6 +4,7 @@ import {ApiGlobalChatAi} from '../actions/Api';
 
 class ChatStore {
   messages = [];
+  isLoading = false;
 
   constructor() {
     makeAutoObservable(this, {
@@ -11,13 +12,24 @@ class ChatStore {
     });
   }
 
-  async fetchApiGlobalChatAi() {
+  async fetchApiGlobalChatAi(prompt) {
+    this.isLoading = true;
     try {
-      let response = await ApiGlobalChatAi();
+      let newMessages = [
+        ...this.messages,
+        {
+          role: 'user',
+          content: prompt?.trim(),
+        },
+      ];
+      let response = await ApiGlobalChatAi(prompt, newMessages);
       runInAction(() => {
         this.messages = response;
+        this.isLoading = false;
       });
-    } catch (error) {}
+    } catch (error) {
+      this.isLoading = false;
+    }
   }
 }
 

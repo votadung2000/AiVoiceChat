@@ -7,7 +7,6 @@ axios.interceptors.request.use(
   function (config) {
     config.headers.Authorization = 'Bearer ' + SECRET_KEY_AI;
     config.headers['Content-Type'] = 'application/json';
-    console.log('config', JSON.stringify(config));
     return config;
   },
   function (error) {
@@ -51,7 +50,7 @@ export const ApiGlobalChatAi = async (prompt, messages) => {
     if (isArt.toLowerCase().includes('yes')) {
       return ApiImgChatAi(prompt, messages);
     } else {
-      return ApiTextChatAi(_, messages);
+      return ApiTextChatAi(null, messages);
     }
   } catch (error) {
     console.log('ApiGlobalChatAi.error', error);

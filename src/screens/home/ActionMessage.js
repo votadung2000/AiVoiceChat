@@ -1,47 +1,44 @@
 import React, {useEffect, useState} from 'react';
-import {
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  Platform,
-  Alert,
-} from 'react-native';
+import {StyleSheet, Text, TouchableOpacity, View, Platform} from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
-import {
-  PERMISSIONS,
-  RESULTS,
-  openSettings,
-  request,
-} from 'react-native-permissions';
+import {observer} from 'mobx-react';
 import FastImage from 'react-native-fast-image';
 import Voice from '@react-native-voice/voice';
-import {ApiCreateChatAi} from '../../actions/Api';
+import Tts from 'react-native-tts';
+
+import {useStores} from '../../context';
 
 const ActionMessage = () => {
+  const {
+    chatStore: {isLoading, messages, fetchApiGlobalChatAi},
+  } = useStores();
+
   const [isCording, setCoding] = useState(false);
+  const [isSpeak, setSpeak] = useState(false);
   const [resultSpeech, setResultSpeech] = useState(null);
 
   useEffect(() => {
-    checkPermission();
-    fetchApiCreateChatAi();
-
     Voice.onSpeechStart = onSpeechStartHandler;
     Voice.onSpeechEnd = onSpeechEndHandler;
     Voice.onSpeechResults = onSpeechResultsHandler;
     Voice.onSpeechError = onSpeechErrorHandler;
 
+    Tts.addEventListener('tts-start', event => console.log('start', event));
+    Tts.addEventListener('tts-progress', event =>
+      console.log('progress', event),
+    );
+    Tts.addEventListener('tts-finish', event => console.log('finish', event));
+    Tts.addEventListener('tts-cancel', event => console.log('cancel', event));
+
     return () => {
       Voice.destroy().then(Voice.removeAllListeners);
     };
-
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const onSpeechStartHandler = error => {
+  const onSpeechStartHandler = e => {
     console.log('onSpeechStartHandler');
   };
 
@@ -55,12 +52,13 @@ const ActionMessage = () => {
     setResultSpeech(e?.value[0]);
   };
 
-  const onSpeechErrorHandler = e => {
+  const onSpeechErrorHandler = error => {
     setCoding(false);
-    console.log('onSpeechErrorHandler', e);
+    console.log('onSpeechErrorHandler', error);
   };
 
   const startRecording = async () => {
+    handleStopSpeak();
     setCoding(true);
     try {
       await Voice.start('en-US');
@@ -73,86 +71,63 @@ const ActionMessage = () => {
     try {
       await Voice.stop();
       setCoding(false);
-      fetchApiCreateChatAi();
+      if (resultSpeech?.trim()?.length > 0) {
+        fetchApiGlobalChatAi(resultSpeech?.trim());
+        setResultSpeech(null);
+        startTts();
+      }
     } catch (error) {
       console.log('Stop Recording Error', error);
     }
   };
 
-  const fetchApiCreateChatAi = async () => {
-    try {
-      let response = await ApiCreateChatAi();
-      console.log('response', JSON.stringify(response));
-    } catch (error) {
-      console.log('fetchApiCreateChatAi.error', error);
+  const startTts = () => {
+    if (!isLoading) {
+      let content = messages[messages?.length - 1]?.content;
+      if (!content?.includes('https')) {
+        if (Platform.OS === 'ios') {
+          Tts.speak(content, {
+            iosVoiceId: 'com.apple.ttsbundle.Moira-compact',
+            rate: 0.5,
+          });
+        } else {
+          Tts.speak(content, {
+            androidParams: {
+              KEY_PARAM_PAN: 1,
+              KEY_PARAM_VOLUME: 2,
+              KEY_PARAM_STREAM: 'STREAM_MUSIC',
+            },
+          });
+        }
+      }
     }
   };
 
-  const handleConfirm = () => {
-    openSettings();
-  };
-
-  const handleOpenSetting = () => {
-    Alert.alert('Warning', 'Confirm permission to use the microphone!!', [
-      {
-        text: 'Cancel',
-        style: 'cancel',
-      },
-      {text: 'OK', onPress: () => handleConfirm()},
-    ]);
-  };
-
-  const handleRecheckPermission = () => {
-    request(
-      Platform.OS === 'ios'
-        ? PERMISSIONS.IOS.MICROPHONE
-        : PERMISSIONS.ANDROID.RECORD_AUDIO,
-    ).then(result => {
-      if (result === RESULTS.GRANTED) {
-        // handleGetGeoLocation();
-      } else {
-        handleOpenSetting();
-      }
-    });
-  };
-
-  const checkPermission = () => {
-    request(
-      Platform.OS === 'ios'
-        ? PERMISSIONS.IOS.MICROPHONE
-        : PERMISSIONS.ANDROID.RECORD_AUDIO,
-    )
-      .then(result => {
-        switch (result) {
-          case RESULTS.GRANTED:
-            // handleGetGeoLocation();
-            break;
-          case RESULTS.UNAVAILABLE:
-          case RESULTS.DENIED:
-          case RESULTS.LIMITED:
-            handleRecheckPermission();
-            break;
-          case RESULTS.BLOCKED:
-            handleOpenSetting();
-            break;
-        }
-      })
-      .catch(error => console.log(error));
+  const handleStopSpeak = () => {
+    Tts.stop();
+    setSpeak(false);
   };
 
   return (
     <View style={styles.container}>
-      <TouchableOpacity activeOpacity={0.7} style={styles.btnStop}>
+      <TouchableOpacity
+        disabled={!isSpeak}
+        activeOpacity={0.7}
+        style={[styles.btnStop, !isSpeak && styles.btnEmpty]}
+        onPress={handleStopSpeak}>
         <Text style={styles.txtAction}>Stop</Text>
       </TouchableOpacity>
       <TouchableOpacity
+        disabled={isLoading}
         activeOpacity={0.7}
         style={styles.btnRecording}
         onPress={isCording ? stopRecording : startRecording}>
         <FastImage
           style={styles.img}
           source={
-            isCording
+            isLoading
+              ? require('../../../assets/gifs/loading.gif')
+              : isCording
               ? require('../../../assets/gifs/voiceLoading.gif')
               : require('../../../assets/images/recordingIcon.png')
           }
@@ -180,12 +155,15 @@ const styles = StyleSheet.create({
     height: wp(18),
   },
   btnStop: {
-    backgroundColor: '#B85757',
+    backgroundColor: '#ff3333',
     paddingHorizontal: wp(3),
     paddingVertical: wp(1),
     borderRadius: wp(4),
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  btnEmpty: {
+    backgroundColor: 'white',
   },
   btnClear: {
     backgroundColor: '#7D7D7D',
@@ -195,10 +173,15 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
+  vwEmpty: {
+    backgroundColor: 'white',
+    paddingHorizontal: wp(3),
+    paddingVertical: wp(1),
+  },
   txtAction: {
     color: 'white',
     fontSize: wp(4),
   },
 });
 
-export default ActionMessage;
+export default observer(ActionMessage);

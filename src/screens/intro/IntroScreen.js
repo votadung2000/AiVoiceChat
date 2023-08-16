@@ -1,14 +1,79 @@
 import React from 'react';
-import {StyleSheet, Text, TouchableOpacity, View} from 'react-native';
+import {
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  Platform,
+  Alert,
+} from 'react-native';
 import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import {
+  PERMISSIONS,
+  RESULTS,
+  openSettings,
+  request,
+} from 'react-native-permissions';
 import FastImage from 'react-native-fast-image';
 
 const IntroScreen = ({navigation}) => {
   const handleNav = () => {
     navigation.navigate('HomeScreen');
+  };
+
+  const handleConfirm = () => {
+    openSettings();
+  };
+
+  const handleOpenSetting = () => {
+    Alert.alert('Warning', 'Confirm permission to use the microphone!!', [
+      {
+        text: 'Cancel',
+        style: 'cancel',
+      },
+      {text: 'OK', onPress: () => handleConfirm()},
+    ]);
+  };
+
+  const handleRecheckPermission = () => {
+    request(
+      Platform.OS === 'ios'
+        ? PERMISSIONS.IOS.MICROPHONE
+        : PERMISSIONS.ANDROID.RECORD_AUDIO,
+    ).then(result => {
+      if (result === RESULTS.GRANTED) {
+        handleNav();
+      } else {
+        handleOpenSetting();
+      }
+    });
+  };
+
+  const checkPermission = () => {
+    request(
+      Platform.OS === 'ios'
+        ? PERMISSIONS.IOS.MICROPHONE
+        : PERMISSIONS.ANDROID.RECORD_AUDIO,
+    )
+      .then(result => {
+        switch (result) {
+          case RESULTS.GRANTED:
+            handleNav();
+            break;
+          case RESULTS.UNAVAILABLE:
+          case RESULTS.DENIED:
+          case RESULTS.LIMITED:
+            handleRecheckPermission();
+            break;
+          case RESULTS.BLOCKED:
+            handleOpenSetting();
+            break;
+        }
+      })
+      .catch(error => console.log(error));
   };
 
   return (
@@ -27,7 +92,7 @@ const IntroScreen = ({navigation}) => {
       </View>
       <TouchableOpacity
         style={styles.btn}
-        onPress={handleNav}
+        onPress={checkPermission}
         activeOpacity={0.7}>
         <Text style={styles.txtBtn}>Get Started</Text>
       </TouchableOpacity>

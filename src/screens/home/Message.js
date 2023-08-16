@@ -4,15 +4,34 @@ import {
   widthPercentageToDP as wp,
   heightPercentageToDP as hp,
 } from 'react-native-responsive-screen';
+import {observer} from 'mobx-react';
+
+import {useStores} from '../../context';
+import FastImage from 'react-native-fast-image';
 
 const Message = () => {
+  const {
+    chatStore: {messages},
+  } = useStores();
+
   const keyExtractor = (_, index) => index?.toString();
 
-  const renderItem = ({item, index}) => {
-    let condition = index % 2 === 0;
+  const renderItem = ({item}) => {
+    let isUser = item?.role === 'user';
     return (
-      <View style={[styles.card, condition ? styles.cardUser : styles.cardAi]}>
-        <Text>{''}</Text>
+      <View style={[styles.card, isUser ? styles.cardUser : styles.cardAi]}>
+        {item.content.includes('https') ? (
+          <FastImage
+            style={styles.img}
+            source={{
+              uri: item,
+              priority: FastImage.priority.normal,
+            }}
+            resizeMode={FastImage.resizeMode.contain}
+          />
+        ) : (
+          <Text>{item?.content || ''}</Text>
+        )}
       </View>
     );
   };
@@ -22,7 +41,7 @@ const Message = () => {
       <View style={styles.content}>
         <FlatList
           inverted
-          data={[1, 2, 3, 4, 5, 6, 7, 8, 9]}
+          data={messages || []}
           keyExtractor={keyExtractor}
           renderItem={renderItem}
           style={styles.flStyle}
@@ -72,6 +91,10 @@ const styles = StyleSheet.create({
     borderTopRightRadius: wp(2),
     borderBottomRightRadius: wp(2),
   },
+  img: {
+    height: wp(60),
+    width: wp(60),
+  },
 });
 
-export default Message;
+export default observer(Message);
