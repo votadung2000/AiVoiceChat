@@ -84,7 +84,7 @@ const ActionMessage = () => {
   const startTts = () => {
     if (!isLoading) {
       let content = messages[messages?.length - 1]?.content;
-      if (!content?.includes('https')) {
+      if (content && !content?.includes('https')) {
         if (Platform.OS === 'ios') {
           Tts.speak(content, {
             iosVoiceId: 'com.apple.ttsbundle.Moira-compact',
